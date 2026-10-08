@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Universal Ping — Keep Your Services Awake</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body data-theme="dark">
+  <div class="app-container">
+    <header class="navbar">
+      <div class="logo-area">
+        <div class="logo-icon">🟢</div>
+        <div>
+          <h1 class="logo-title">Universal Ping</h1>
+          <p class="logo-subtitle">Keep your services awake</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <span id="mode-badge" class="mode-badge">Server Mode</span>
+        <button id="btn-open-settings" class="btn btn-secondary">⚙️ Настройки</button>
+      </div>
+    </header>
+
+    <section class="dashboard-stats">
+      <div class="stat-card">
+        <span class="stat-label">Мониторов</span>
+        <span class="stat-value" id="stat-total">0</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">Online</span>
+        <span class="stat-value text-online" id="stat-online">0</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">Offline</span>
+        <span class="stat-value text-offline" id="stat-offline">0</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">Avg Response</span>
+        <span class="stat-value" id="stat-avg-time">0 ms</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">Uptime</span>
+        <span class="stat-value text-online" id="stat-uptime">100%</span>
+      </div>
+    </section>
+
+    <div class="render-info-box">
+      <div class="info-icon">💡</div>
+      <div class="info-text">
+        <strong>Render Free & Free Hosts:</strong> Некоторые бесплатные хостинги могут автоматически приостанавливать сервис при отсутствии активности. Регулярные HTTP-запросы помогают поддерживать активность, однако фактическое поведение зависит от политики конкретного хостинга.
+      </div>
+    </div>
+
+    <section class="card add-monitor-card">
+      <h2>+ Добавить монитор</h2>
+      <form id="add-monitor-form" class="add-form">
+        <div class="form-row">
+          <input type="text" id="monitor-name" placeholder="Название (напр. My Render API)" class="input-field" />
+          <input type="url" id="monitor-url" placeholder="https://example.onrender.com" required class="input-field" />
+        </div>
+        <div class="form-row">
+          <select id="monitor-interval" class="select-field">
+            <option value="1">Интервал: 1 минута</option>
+            <option value="2">Интервал: 2 минуты</option>
+            <option value="5" selected>Интервал: 5 минут</option>
+            <option value="10">Интервал: 10 минут</option>
+            <option value="15">Интервал: 15 минут</option>
+            <option value="30">Интервал: 30 минут</option>
+          </select>
+          <button type="submit" class="btn btn-primary">+ Добавить</button>
+        </div>
+        <p class="form-hint">⚠️ Чем меньше интервал, тем больше запросов отправляется на целевой сервер.</p>
+      </form>
+    </section>
+
+    <section class="monitors-section">
+      <div class="section-header">
+        <h2>Список сервисов</h2>
+        <button id="btn-check-all" class="btn btn-small btn-secondary">🔄 Проверить все</button>
+      </div>
+      <div id="monitors-grid" class="monitors-grid"></div>
+    </section>
+  </div>
+
+  <div id="details-modal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="modal-title">Детали монитора</h3>
+        <button class="close-btn" id="close-details">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="details-summary">
+          <div><strong>URL:</strong> <a id="modal-url" href="#" target="_blank" rel="noopener">--</a></div>
+          <div><strong>Текущий статус:</strong> <span id="modal-status">--</span></div>
+          <div><strong>HTTP Code:</strong> <span id="modal-http-code">--</span></div>
+          <div><strong>Время ответа:</strong> <span id="modal-response-time">--</span></div>
+          <div><strong>Последняя успешная проверка:</strong> <span id="modal-last-success">--</span></div>
+          <div><strong>Успешных проверок:</strong> <span id="modal-success-count">0</span></div>
+          <div><strong>Ошибок:</strong> <span id="modal-error-count">0</span></div>
+          <div><strong>Uptime:</strong> <span id="modal-uptime">100%</span></div>
+        </div>
+
+        <h4>Response Time (ms)</h4>
+        <div class="chart-container">
+          <svg id="response-chart" viewBox="0 0 500 150"></svg>
+        </div>
+
+        <h4>История проверок</h4>
+        <ul id="history-list" class="history-list"></ul>
+      </div>
+    </div>
+  </div>
+
+  <div id="settings-modal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>⚙️ Настройки</h3>
+        <button class="close-btn" id="close-settings">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="settings-group">
+          <h4>Общие</h4>
+          <label>Тема оформления:
+            <select id="setting-theme" class="select-field">
+              <option value="dark">Dark (Темная)</option>
+              <option value="light">Light (Светлая)</option>
+            </select>
+          </label>
+          <label>Режим работы:
+            <select id="setting-mode" class="select-field">
+              <option value="server">Server Mode (Серверный API)</option>
+              <option value="client">Client Mode (Браузерный)</option>
+            </select>
+          </label>
+          <label id="backend-url-label">URL Бэкенда API:
+            <input type="text" id="setting-backend-url" class="input-field" />
+          </label>
+        </div>
+
+        <div class="settings-group">
+          <h4>Мониторинг</h4>
+          <label>Таймаут запроса (сек):
+            <input type="number" id="setting-timeout" class="input-field" value="10" min="2" max="30" />
+          </label>
+        </div>
+
+        <button id="btn-save-settings" class="btn btn-primary full-width">Сохранить</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
